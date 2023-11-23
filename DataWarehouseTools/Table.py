@@ -1,6 +1,7 @@
 from typing import List
 from MyDataStructure import IteratorFactory
 from MyException import SqlTypeNotSupportException, MissImportantTableInfoException
+from SmallTools import get_today
 
 
 class Column:
@@ -79,7 +80,8 @@ STORED AS {table.file_type}
             column_comment_iter = IteratorFactory(input_iter=table.column.column_name_list)
             column_comment_iter.zip(other_iter=table.column.column_comment_list)
             column_comment_iter.map(
-                lambda elem: f"COMMENT ON COLUMN {table.schema_name}{table.if_add_dot()}{table.table_name}.{elem[0]} IS '{elem[1]}';"
+                lambda
+                    elem: f"COMMENT ON COLUMN {table.schema_name}{table.if_add_dot()}{table.table_name}.{elem[0]} IS '{elem[1]}';"
             )
             column_comment_str = column_comment_iter.join('\n')
             result_str = f"""CREATE TABLE IF NOT EXISTS {table.schema_name}{table.if_add_dot()}{table.table_name} (
@@ -91,16 +93,4 @@ COMMENT ON TABLE {table.schema_name}{table.if_add_dot()}{table.table_name} IS '{
 
 
 if __name__ == '__main__':
-    my_table = Table(
-        _table_name='Student',
-        _schema_name='xyk',
-        _column=Column(
-            _column_name_list=['name', 'gender', 'age'],
-            _column_type_list=['STRING', 'BOOLEAN', 'INT'],
-            _column_comment_list=['名字', '性别', '年龄']
-        ),
-        _table_comment='学生信息',
-        _delimiter='\\n',
-        _file_type='orc'
-    )
-    print(SqlTools.generate_sql_create_table(table=my_table, sql_type='mysql'))
+    pass
