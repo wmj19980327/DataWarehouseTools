@@ -1,6 +1,7 @@
 from typing import List
 from MyDataStructure import IteratorFactory
-from MyException import SqlTypeNotSupportException, MissImportantTableInfoException
+from MyException import SqlTypeNotSupportException, MissImportantTableInfoException, \
+    TableColumnNameCanNotBeSameException
 from SmallTools import get_today
 
 
@@ -19,6 +20,12 @@ class Column:
         self.column_name_list = _column_name_list
         self.column_type_list = _column_type_list
         self.column_comment_list = _column_comment_list
+        self.check_if_same_column_name()
+
+    def check_if_same_column_name(self) -> None:
+        column_name_if = IteratorFactory(self.column_name_list)
+        if column_name_if.if_have_same_elem():
+            raise TableColumnNameCanNotBeSameException()
 
 
 class Table:
@@ -80,8 +87,8 @@ STORED AS {table.file_type}
             column_comment_iter = IteratorFactory(input_iter=table.column.column_name_list)
             column_comment_iter.zip(other_iter=table.column.column_comment_list)
             column_comment_iter.map(
-                lambda
-                    elem: f"COMMENT ON COLUMN {table.schema_name}{table.if_add_dot()}{table.table_name}.{elem[0]} IS '{elem[1]}';"
+                lambda elem: f"COMMENT ON COLUMN {table.schema_name}{table.if_add_dot()}" +
+                             f"{table.table_name}.{elem[0]} IS '{elem[1]}';"
             )
             column_comment_str = column_comment_iter.join('\n')
             result_str = f"""CREATE TABLE IF NOT EXISTS {table.schema_name}{table.if_add_dot()}{table.table_name} (
@@ -90,6 +97,41 @@ STORED AS {table.file_type}
 COMMENT ON TABLE {table.schema_name}{table.if_add_dot()}{table.table_name} IS '{table.table_comment}';
 {column_comment_str}"""
         return result_str
+
+    @staticmethod
+    def generate_sql_lazy_select_insert(source_table: Table, target_table: Table, if_overwrite: bool = True):
+        """
+        生成 INSERT + SELECT * 语句
+        :param source_table: 来源表
+        :param target_table: 目标表
+        :param if_overwrite: 是否覆盖插入
+        :return: sql
+        """
+        return f"""INSERT {"OVERWRITE TABLE" if if_overwrite else "INTO"} {target_table.schema_name}{target_table.if_add_dot()}{target_table.table_name}
+SELECT * FROM {source_table.schema_name}{source_table.if_add_dot()}{source_table.table_name};"""
+
+    @staticmethod
+    def generate_comment_basic(source_table: Table, target_table: Table, author: str,
+                               if_have_other: bool = False) -> str:
+        """
+        生成基础注释
+        :param source_table: 来源表
+        :param target_table: 目标表
+        :param author: 作者
+        :param if_have_other: 是否还有其他注释信息
+        :return: 注释字符串
+        """
+        result_str = f"""-- {'*'*70} --
+-- 作者: {author}
+-- 创建时间: {get_today()}
+-- 目标表: {target_table.schema_name}{target_table.if_add_dot()}{target_table.table_name}
+-- 来源表: {source_table.schema_name}{source_table.if_add_dot()}{source_table.table_name}
+$other$
+-- {'*'*70} --"""
+        if if_have_other:
+            return result_str
+        else:
+            return result_str.replace("\n$other$", "")
 
 
 if __name__ == '__main__':

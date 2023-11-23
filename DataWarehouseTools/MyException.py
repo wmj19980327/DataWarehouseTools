@@ -40,3 +40,8 @@ class MissImportantTableInfoException(Exception):
 
     def __str__(self):
         return self.context
+
+
+class TableColumnNameCanNotBeSameException(Exception):
+    def __str__(self):
+        return f"表的列名不可以存在重复值 !!!"
